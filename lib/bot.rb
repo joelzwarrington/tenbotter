@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
-require 'redis'
-require 'securerandom'
 require 'discordrb'
-require 'discordrb/webhooks'
 require 'discordrb/api'
 require 'chronic'
 
@@ -14,19 +11,18 @@ COOLSPOT_ID = 786446795822858280
 DROOLSPOT_ID = 838610850893398016
 
 bot = Discordrb::Bot.new token: TOKEN, intents: %i[server_messages server_message_reactions]
-redis = Redis.new
 
 # bot.get_application_commands(server_id: SERVER_ID).each do |application|
 #   application.delete
 # end
 
 # move this to rake task
-bot.register_application_command(:beckon, 'Send out a beckon', server_id: SERVER_ID) do |command|
-  command.string('start_time', 'When would the game start?')
-end
-bot.register_application_command(:play, 'Start', server_id: SERVER_ID) do |command|
-  command.string('best_of', 'How many games in the set?', choices: { 'BO1': '1', 'BO3': '3', 'BO5': '5', 'BO7': '7' })
-end
+# bot.register_application_command(:beckon, 'Send out a beckon', server_id: SERVER_ID) do |command|
+#   command.string('start_time', 'When would the game start?')
+# end
+# bot.register_application_command(:play, 'Start', server_id: SERVER_ID) do |command|
+#   command.string('best_of', 'How many games in the set?', choices: { 'BO1': '1', 'BO3': '3', 'BO5': '5', 'BO7': '7' })
+# end
 
 bot.application_command(:beckon) do |event|
   start_time = Chronic.parse(event.options['start_time'])
@@ -53,21 +49,6 @@ bot.application_command(:beckon) do |event|
         {
           name: "<:coolspot:#{COOLSPOT_ID}> | 0",
           value: "",
-          inline: true
-        },
-        {
-          name: "",
-          value: "",
-          inline: true
-        },
-        {
-          "name": "<:droolspot:#{DROOLSPOT_ID}> | 0",
-          "value": "",
-          "inline": true
-        },
-        {
-          name: "",
-          value: "",
         },
       ]
     },
@@ -79,18 +60,19 @@ bot.application_command(:beckon) do |event|
 
 
   message.react "coolspot:#{COOLSPOT_ID}"
-  message.react "droolspot:#{DROOLSPOT_ID}"
 end
 
-bot.reaction_add do |event|
-  return unless [COOLSPOT_ID, DROOLSPOT_ID].include? event.emoji.id
-
-  users_by_emoji_reaction = [['coolspot', COOLSPOT_ID], ['droolspot', DROOLSPOT_ID]].each_with_object({}) do |emoji, object|
-    emoji_name, emoji_id = emoji
-    reaction_response = Discordrb::API::Channel.get_reactions("Bot #{TOKEN}", event.channel.id, event.message.id, "#{emoji_name}:#{emoji_id}", nil, nil)
-    reactions = JSON.parse(reaction_response.body)
-    object[emoji_name] = reactions.filter { |r| r['id'] != bot.bot_app.id.to_s }.map { |r| r['id'] }
-  end
+bot.reaction_add(emoji: COOLSPOT_ID) do |event|
+  spotters = JSON.parse(
+    Discordrb::API::Channel.get_reactions(
+      "Bot #{TOKEN}",
+      event.channel.id,
+      event.message.id,
+      "coolspot:#{COOLSPOT_ID}",
+      nil,
+      nil
+    ).body
+  ).filter {|user| user['id'] != bot.bot_app.id.to_s }.sort_by { |user| user['username'] }.map { |user| "<@#{user['id']}>" }
 
   event.message.edit(
     event.message.content,
@@ -102,60 +84,45 @@ bot.reaction_add do |event|
           value: event.message.embeds.first.fields.first.value,
         },
         {
-          name: "<:coolspot:#{COOLSPOT_ID}> | #{users_by_emoji_reaction['coolspot'].count}",
-          value: users_by_emoji_reaction['coolspot'].map { |user| "<@#{user}>" }.join("\n"),
-          inline: true,
+          name: "<:coolspot:#{COOLSPOT_ID}> | #{spotters.count}",
+          value: spotters.join("\n"),
         },
-        {
-          name: "",
-          value: "",
-          inline: true,
-        },
-        {
-          name: "<:droolspot:#{DROOLSPOT_ID}> | #{users_by_emoji_reaction['droolspot'].count}",
-          value: users_by_emoji_reaction['droolspot'].map { |user| "<@#{user}>" }.join("\n"),
-          inline: true,
-        }
       ]
     }
   )
 
-  users_by_emoji
+  event.message.delete_own_reaction("coolspot:#{COOLSPOT_ID}") if spotters.count >= 1
 
-  if users_by_emoji_reaction['coolspot'].count >= 2
-    bot.send_message(
-      event.channel,
+  if spotters.count >= 2
+    event.message.respond(
       "**<@&#{ROLE_ID}> play time!**",
       false,
       nil,
       nil,
-      {
-        roles: [ROLE_ID]
-      },
+      { roles: [ROLE_ID] },
       {
         message_id: event.message.id,
         channel_id: event.channel.id,
-        guild_id: event.server.id
+        guild_id: event.server.id,
       }
     )
   end
 end
 
-bot.reaction_remove do |event|
-  return unless [COOLSPOT_ID, DROOLSPOT_ID].include? event.emoji.id 
+bot.reaction_remove(emoji: COOLSPOT_ID) do |event|
+  spotters = JSON.parse(
+    Discordrb::API::Channel.get_reactions(
+      "Bot #{TOKEN}",
+      event.channel.id,
+      event.message.id,
+      "coolspot:#{COOLSPOT_ID}",
+      nil,
+      nil
+    ).body
+  ).filter {|user| user['id'] == bot.bot_app.id.to_s }.sort_by { |user| user['username'] }.map { |user| "<@#{user['id']}>" }
 
-  users_by_emoji_reaction = [['coolspot', COOLSPOT_ID], ['droolspot', DROOLSPOT_ID]].each_with_object({}) do |emoji, object|
-    emoji_name, emoji_id = emoji
-    reaction_response = Discordrb::API::Channel.get_reactions("Bot #{TOKEN}", event.channel.id, event.message.id, "#{emoji_name}:#{emoji_id}", nil, nil)
-    reactions = JSON.parse(reaction_response.body)
-    object[emoji_name] = reactions.filter { |r| r['id'] != bot.bot_app.id.to_s }.map { |r| r['id'] }
-  end
-
-  message_response = Discordrb::API::Channel.message("Bot #{TOKEN}", event.channel.id, event.message.id)
-  message = Discordrb::Message.new(JSON.parse(message_response.body), bot)
-
-  message.edit(
-    message.content,
+  event.message.edit(
+    event.message.content,
     {
       color: 13632027,
       fields: [
@@ -164,22 +131,21 @@ bot.reaction_remove do |event|
           value: event.message.embeds.first.fields.first.value,
         },
         {
-          name: "<:coolspot:#{COOLSPOT_ID}> | #{users_by_emoji_reaction['coolspot'].count}",
-          value: users_by_emoji_reaction['coolspot'].map { |user| "<@#{user}>" }.join("\n"),
-          inline: true
+          name: "<:coolspot:#{COOLSPOT_ID}> | #{spotters.count}",
+          value: spotters.join("\n"),
         },
-        {
-          name: "",
-          value: "",
-          inline: true
-        },
-        {
-          name: "<:droolspot:#{DROOLSPOT_ID}> | #{users_by_emoji_reaction['droolspot'].count}",
-          value: users_by_emoji_reaction['droolspot'].map { |user| "<@#{user}>" }.join("\n"),
-          inline: true
-        }
       ]
     }
+  )
+
+  event.message.react("coolspot:#{COOLSPOT_ID}") if spotters.count == 0
+
+  event.message.respond(
+    "#{event.user.mention} is a filthy unspotter... ban him!",
+    false,
+    nil,
+    nil,
+    { roles: [ROLE_ID] }
   )
 end
 
