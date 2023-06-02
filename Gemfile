@@ -4,6 +4,7 @@ source "https://rubygems.org"
 
 gemspec
 
+gem 'redis'
 gem 'discordrb', github: 'shardlab/discordrb', branch: 'main'
 gem "rake", "~> 13.0"
 gem "rspec", "~> 3.0"
