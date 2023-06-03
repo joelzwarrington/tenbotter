@@ -1,35 +1,15 @@
-# Tenbotter
+## tenbotter
 
-TODO: Delete this and the text below, and describe your gem
+A Discord bot for managing CS:GO 10man's built in ruby.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/tenbotter`. To experiment with that code, run `bin/console` for an interactive prompt.
+![Screenshot of the bot's messages](demo.png)
 
-## Installation
+### Getting Started
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+1. bin/setup
+2. Setup a [new Discord application](https://discord.com/developers/applications)
+3. Go to the bot page `https://discord.com/developers/applications/{app_id}/bot`
+4. Grab the token and insert into `.env` file which was created for you.
+5. Add the bot to your server https://discord.com/oauth2/authorize?client_id={app_id}&scope=bot&permissions=8
 
-Install the gem and add to the application's Gemfile by executing:
-
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
-
-If bundler is not being used to manage dependencies, install the gem by executing:
-
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
-
-## Usage
-
-TODO: Write usage instructions here
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/tenbotter.
-
-## License
-
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+Note: At the moment a lot of the things are hard-coded, and will not work for other server beyond the one it has been configured for. Soon there will be more configuration options.
