@@ -23,20 +23,6 @@ bot = Discordrb::Bot.new token: TOKEN, intents: %i[server_messages server_messag
 # bot.register_application_command(:beckon, 'Send out a beckon', server_id: SERVER_ID) do |command|
 #   command.string('start_time', 'When would the game start?')
 # end
-# bot.register_application_command(:play, 'Start', server_id: SERVER_ID) do |command|
-#   command.user('player_1', 'Player 1', required: true)
-#   command.user('player_2', 'Player 2', required: true)
-#   command.user('player_3', 'Player 3', required: true)
-#   command.user('player_4', 'Player 4', required: true)
-#   command.user('player_5', 'Player 5', required: true)
-#   command.user('player_6', 'Player 6', required: true)
-#   command.user('player_7', 'Player 7', required: true)
-#   command.user('player_8', 'Player 8', required: true)
-#   command.user('player_9', 'Player 9', required: true)
-#   command.user('player_10', 'Player 10', required: true)
-#   command.boolean('include_reserve_maps', 'Include reserve maps (Default: true)')
-#   command.string('best_of', 'How many games in the set? (Default: 1)', choices: { '1': '1', '3': '3', '5': '5', '7': '7' })
-# end
 
 # bot.register_application_command(:play, 'Start', server_id: SERVER_ID) do |command|
 #   command.user('excluded_player_1', 'Excluded Player 1', required: false)
@@ -64,146 +50,14 @@ bot.application_command(:beckon) do |event|
 
   event.respond(content: "Submitting a new beckon!", ephemeral: true)
   @active_beckon = Beckon.new(start_time, bot, event)
-  #  bot.send_message(
-  #   event.channel,
-  #   "<@&#{ROLE_ID}> a new beckon has appeared!",
-  #   false,
-  #   {
-  #     color: 13_632_027,
-  #     fields: [
-  #       {
-  #         name: "**:stopwatch: Start Time**: #{start_time.strftime("%F %l:%M %p").strip}",
-  #         value: ""
-  #       },
-  #       {
-  #         name: "<:coolspot:#{COOLSPOT_ID}> | 0",
-  #         value: ""
-  #       }
-  #     ]
-  #   },
-  #   nil,
-  #   {
-  #     roles: [ROLE_ID]
-  #   }
-  # )
-
-  # message.react "coolspot:#{COOLSPOT_ID}"
 end
 
 bot.reaction_add(emoji: COOLSPOT_ID) do |event|
   @active_beckon.reaction_add(event) if event.message.id == @active_beckon.beckon_message.id
-  # spotters = JSON.parse(
-  #   Discordrb::API::Channel.get_reactions(
-  #     "Bot #{TOKEN}",
-  #     event.channel.id,
-  #     event.message.id,
-  #     "coolspot:#{COOLSPOT_ID}",
-  #     nil,
-  #     nil
-  #   ).body
-  # ).filter { |user| user["id"] != bot.bot_app.id.to_s }.sort_by { |user| user["username"] }.map { |user| "<@#{user["id"]}>" }
-
-  # event.message.edit(
-  #   event.message.content,
-  #   {
-  #     color: 13_632_027,
-  #     fields: [
-  #       {
-  #         name: event.message.embeds.first.fields.first.name,
-  #         value: event.message.embeds.first.fields.first.value
-  #       },
-  #       {
-  #         name: "<:coolspot:#{COOLSPOT_ID}> | #{spotters.count}",
-  #         value: spotters.join("\n")
-  #       }
-  #     ]
-  #   }
-  # )
-
-  # event.message.delete_own_reaction("coolspot:#{COOLSPOT_ID}") if spotters.count >= 1
-
-  # case spotters.count
-  # when 5
-  #   event.message.respond(
-  #     "**<@&#{ROLE_ID}> halfway there, we have 5/10 <:coolspot:#{COOLSPOT_ID}>!**",
-  #     false,
-  #     nil,
-  #     nil,
-  #     { roles: [ROLE_ID] },
-  #     {
-  #       message_id: event.message.id,
-  #       channel_id: event.channel.id,
-  #       guild_id: event.server.id
-  #     }
-  #   )
-  # when 9
-  #   event.message.respond(
-  #     "**<@&#{ROLE_ID}> just one left, we have 9/10 <:coolspot:#{COOLSPOT_ID}>!**",
-  #     false,
-  #     nil,
-  #     nil,
-  #     { roles: [ROLE_ID] },
-  #     {
-  #       message_id: event.message.id,
-  #       channel_id: event.channel.id,
-  #       guild_id: event.server.id
-  #     }
-  #   )
-  # when 10
-  #   event.message.respond(
-  #     "**<@&#{ROLE_ID}> play time!**",
-  #     false,
-  #     nil,
-  #     nil,
-  #     { roles: [ROLE_ID] },
-  #     {
-  #       message_id: event.message.id,
-  #       channel_id: event.channel.id,
-  #       guild_id: event.server.id
-  #     }
-  #   )
-  # end
 end
 
 bot.reaction_remove(emoji: COOLSPOT_ID) do |event|
   @active_beckon.reaction_remove(event) if event.message.id == @active_beckon.beckon_message.id
-  # spotters = JSON.parse(
-  #   Discordrb::API::Channel.get_reactions(
-  #     "Bot #{TOKEN}",
-  #     event.channel.id,
-  #     event.message.id,
-  #     "coolspot:#{COOLSPOT_ID}",
-  #     nil,
-  #     nil
-  #   ).body
-  # ).filter { |user| user["id"] != bot.bot_app.id.to_s }.sort_by { |user| user["username"] }.map { |user| "<@#{user["id"]}>" }
-
-  # event.message.edit(
-  #   event.message.content,
-  #   {
-  #     color: 13_632_027,
-  #     fields: [
-  #       {
-  #         name: event.message.embeds.first.fields.first.name,
-  #         value: event.message.embeds.first.fields.first.value
-  #       },
-  #       {
-  #         name: "<:coolspot:#{COOLSPOT_ID}> | #{spotters.count}",
-  #         value: spotters.join("\n")
-  #       }
-  #     ]
-  #   }
-  # )
-
-  # event.message.react("coolspot:#{COOLSPOT_ID}") if spotters.count.zero?
-
-  # event.message.respond(
-  #   "#{event.user.mention} is a filthy unspotter... ban him!",
-  #   false,
-  #   nil,
-  #   nil,
-  #   { roles: [ROLE_ID] }
-  # )
 end
 
 PLAYER_RANKINGS = [
