@@ -19,23 +19,23 @@ bot = Discordrb::Bot.new token: TOKEN, intents: %i[server_messages server_messag
 # end
 
 # move this to rake task
-# bot.register_application_command(:beckon, 'Send out a beckon', server_id: SERVER_ID) do |command|
-#   command.string('start_time', 'When would the game start?')
-# end
-# bot.register_application_command(:play, 'Start', server_id: SERVER_ID) do |command|
-#   command.user('player_1', 'Player 1', required: true)
-#   command.user('player_2', 'Player 2', required: true)
-#   command.user('player_3', 'Player 3', required: true)
-#   command.user('player_4', 'Player 4', required: true)
-#   command.user('player_5', 'Player 5', required: true)
-#   command.user('player_6', 'Player 6', required: true)
-#   command.user('player_7', 'Player 7', required: true)
-#   command.user('player_8', 'Player 8', required: true)
-#   command.user('player_9', 'Player 9', required: true)
-#   command.user('player_10', 'Player 10', required: true)
-#   command.boolean('include_reserve_maps', 'Include reserve maps (Default: true)')
-#   command.string('best_of', 'How many games in the set? (Default: 1)', choices: { '1': '1', '3': '3', '5': '5', '7': '7' })
-# end
+bot.register_application_command(:beckon, 'Send out a beckon', server_id: SERVER_ID) do |command|
+  command.string('start_time', 'When would the game start?')
+end
+bot.register_application_command(:play, 'Start', server_id: SERVER_ID) do |command|
+  command.user('player_1', 'Player 1', required: true)
+  command.user('player_2', 'Player 2', required: true)
+  command.user('player_3', 'Player 3', required: true)
+  command.user('player_4', 'Player 4', required: true)
+  command.user('player_5', 'Player 5', required: true)
+  command.user('player_6', 'Player 6', required: true)
+  command.user('player_7', 'Player 7', required: true)
+  command.user('player_8', 'Player 8', required: true)
+  command.user('player_9', 'Player 9', required: true)
+  command.user('player_10', 'Player 10', required: true)
+  command.boolean('include_reserve_maps', 'Include reserve maps (Default: true)')
+  command.string('best_of', 'How many games in the set? (Default: 1)', choices: { '1': '1', '3': '3', '5': '5', '7': '7' })
+end
 
 bot.application_command(:beckon) do |event|
   start_time = Chronic.parse(event.options["start_time"])
@@ -189,6 +189,7 @@ bot.reaction_remove(emoji: COOLSPOT_ID) do |event|
 end
 
 PLAYER_RANKINGS = [
+  "214151105813282816", # shimmy
   "451190205609934858", # skip
   "164172161290862592", # reggy
   "158322743522099211", # faffy
