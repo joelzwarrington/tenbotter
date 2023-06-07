@@ -1,0 +1,1 @@
+bot: bundle exec ruby lib/bot.rb

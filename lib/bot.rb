@@ -63,6 +63,7 @@ bot.reaction_remove(emoji: COOLSPOT_ID) do |event|
 end
 
 PLAYER_RANKINGS = [
+  "214151105813282816", # shimmy
   "451190205609934858", # skip
   "164172161290862592", # reggy
   "158322743522099211", # faffy
