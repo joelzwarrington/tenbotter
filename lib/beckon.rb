@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
 class Beckon
-  def initialize(start_time, bot, event)
+  def initialize(start_time, _bot, _event)
     @start_time = start_time
     @spotters = []
+    @beckon_message = nil
+  end
+
+  def create_beckon_message(bot, event)
     @beckon_message = bot.send_message(
       event.channel,
       "<@&#{ROLE_ID}> a new beckon has appeared!",
@@ -26,12 +30,17 @@ class Beckon
         roles: [ROLE_ID]
       }
     )
-
-    @beckon_message.react "coolspot:#{COOLSPOT_ID}"
   end
 
-  attr_reader :beckon_message
-  attr_reader :spotters
+  def add_bot_reaction
+    @beckon_message&.react("coolspot:#{COOLSPOT_ID}")
+  end
+
+  def remove_bot_reaction
+    @beckon_message&.delete_own_reaction("coolspot:#{COOLSPOT_ID}")
+  end
+
+  attr_reader :beckon_message, :spotters
 
   def expired?(new_start_time = Time.now)
     !new_start_time.between?(@start_time - (3 * 60 * 60), @start_time + (3 * 60 * 60))
@@ -57,7 +66,7 @@ class Beckon
       }
     )
 
-    event.message.delete_own_reaction("coolspot:#{COOLSPOT_ID}") if @spotters.count >= 1
+    remove_bot_reaction if @spotters.count >= 1
 
     handle_spotter_count(event)
   end
@@ -125,7 +134,7 @@ class Beckon
       }
     )
 
-    event.message.react("coolspot:#{COOLSPOT_ID}") if @spotters.count.zero?
+    add_bot_reaction if @spotters.count.zero?
 
     event.message.respond(
       "#{event.user.mention} is a filthy unspotter... ban him!",

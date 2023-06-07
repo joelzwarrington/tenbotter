@@ -50,6 +50,8 @@ bot.application_command(:beckon) do |event|
 
   event.respond(content: "Submitting a new beckon!", ephemeral: true)
   @active_beckon = Beckon.new(start_time, bot, event)
+  @active_beckon.create_beckon_message(bot, event)
+  @active_beckon.add_bot_reaction
 end
 
 bot.reaction_add(emoji: COOLSPOT_ID) do |event|
