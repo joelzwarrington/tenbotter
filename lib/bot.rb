@@ -33,6 +33,7 @@ bot = Discordrb::Bot.new token: TOKEN, intents: %i[server_messages server_messag
 #   command.boolean('include_reserve_maps', 'Include reserve maps (Default: true)')
 #   command.string('best_of', 'How many games in the set? (Default: 1)', choices: { '1': '1', '3': '3', '5': '5', '7': '7' })
 # end
+# bot.register_application_command(:dire, "Cancel the current active beckon", server_id: SERVER_ID)
 
 bot.application_command(:beckon) do |event|
   start_time = Chronic.parse(event.options["start_time"])
@@ -52,6 +53,10 @@ bot.application_command(:beckon) do |event|
   @active_beckon = Beckon.new(start_time, bot, event)
   @active_beckon.create_beckon_message(bot, event)
   @active_beckon.add_bot_reaction
+end
+
+bot.application_command(:dire) do |_event|
+  @active_beckon = nil
 end
 
 bot.reaction_add(emoji: COOLSPOT_ID) do |event|
