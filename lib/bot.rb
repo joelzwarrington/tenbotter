@@ -36,6 +36,7 @@ bot.register_application_command(:play, 'Start', server_id: SERVER_ID) do |comma
   command.boolean('include_reserve_maps', 'Include reserve maps (Default: true)')
   command.string('best_of', 'How many games in the set? (Default: 1)', choices: { '1': '1', '3': '3', '5': '5', '7': '7' })
 end
+bot.register_application_command(:dire, "Cancel the current active beckon", server_id: SERVER_ID)
 
 bot.application_command(:beckon) do |event|
   start_time = Chronic.parse(event.options["start_time"])
@@ -72,6 +73,10 @@ bot.application_command(:beckon) do |event|
   )
 
   message.react "coolspot:#{COOLSPOT_ID}"
+end
+
+bot.application_command(:dire) do |_event|
+  @active_beckon = nil
 end
 
 bot.reaction_add(emoji: COOLSPOT_ID) do |event|
