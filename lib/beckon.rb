@@ -16,7 +16,7 @@ class Beckon
         color: 13_632_027,
         fields: [
           {
-            name: "**:stopwatch: Start Time**: #{start_time.strftime("%F %l:%M %p").strip}",
+            name: "**:stopwatch: Start Time**: #{@start_time.strftime("%F %l:%M %p").strip}",
             value: ""
           },
           {

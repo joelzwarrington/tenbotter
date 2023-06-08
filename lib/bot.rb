@@ -38,15 +38,15 @@ bot = Discordrb::Bot.new token: TOKEN, intents: %i[server_messages server_messag
 bot.application_command(:beckon) do |event|
   start_time = Chronic.parse(event.options["start_time"])
 
-  if !@active_beckon.nil? && !@active_beckon.expired?(start_time)
-    event.respond(content: "There is already an active beckon: <#{@active_beckon.beckon_message.link}>")
-  end
-
   if start_time.nil? && !event.options["start_time"].nil?
     event.respond(content: ":x: Uh oh, looks like you didn't specify a valid start time.\n\nTry something like '5pm', 'tonight', 'now'")
     return
   elsif event.options["start_time"].nil?
     start_time = Chronic.parse("tonight at 9")
+  end
+
+  if !@active_beckon.nil? && !@active_beckon.expired?(start_time)
+    event.respond(content: "There is already an [active beckon](#{@active_beckon.beckon_message.link})!")
   end
 
   event.respond(content: "Submitting a new beckon!", ephemeral: true)
@@ -55,8 +55,13 @@ bot.application_command(:beckon) do |event|
   @active_beckon.add_bot_reaction
 end
 
-bot.application_command(:dire) do |_event|
-  @active_beckon = nil
+bot.application_command(:dire) do |event|
+  if @active_beckon.nil?
+    event.respond(content: "There is no active beckon to cancel!", ephemeral: true)
+  else
+    event.respond(content: "[The beckon](#{@active_beckon.beckon_message.link}) has been canceled")
+    @active_beckon = nil
+  end
 end
 
 bot.reaction_add(emoji: COOLSPOT_ID) do |event|
