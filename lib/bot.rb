@@ -46,7 +46,7 @@ bot.application_command(:beckon) do |event|
   end
 
   if !@active_beckon.nil? && !@active_beckon.expired?(start_time)
-    event.respond(content: "There is already an [active beckon](#{@active_beckon.beckon_message.link})!")
+    event.respond(content: "There is already an [active beckon](#{@active_beckon.beckon_message.link})!", flags: 1 << 2)
   end
 
   event.respond(content: "Submitting a new beckon!", ephemeral: true)
@@ -59,7 +59,7 @@ bot.application_command(:dire) do |event|
   if @active_beckon.nil?
     event.respond(content: "There is no active beckon to cancel!", ephemeral: true)
   else
-    event.respond(content: "[The beckon](#{@active_beckon.beckon_message.link}) has been canceled")
+    event.respond(content: "[The beckon](#{@active_beckon.beckon_message.link}) has been canceled", flags: 1 << 2)
     @active_beckon = nil
   end
 end
