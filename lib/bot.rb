@@ -38,15 +38,15 @@ bot = Discordrb::Bot.new token: TOKEN, intents: %i[server_messages server_messag
 bot.application_command(:beckon) do |event|
   start_time = Chronic.parse(event.options["start_time"])
 
-  if !@active_beckon.nil? && !@active_beckon.expired?(start_time)
-    event.respond(content: "There is already an active beckon: <#{@active_beckon.beckon_message.link}>")
-  end
-
   if start_time.nil? && !event.options["start_time"].nil?
     event.respond(content: ":x: Uh oh, looks like you didn't specify a valid start time.\n\nTry something like '5pm', 'tonight', 'now'")
     return
   elsif event.options["start_time"].nil?
     start_time = Chronic.parse("tonight at 9")
+  end
+
+  if !@active_beckon.nil? && !@active_beckon.expired?(start_time)
+    event.respond(content: "There is already an [active beckon](#{@active_beckon.beckon_message.link})!", flags: 1 << 2)
   end
 
   event.respond(content: "Submitting a new beckon!", ephemeral: true)
@@ -55,8 +55,13 @@ bot.application_command(:beckon) do |event|
   @active_beckon.add_bot_reaction
 end
 
-bot.application_command(:dire) do |_event|
-  @active_beckon = nil
+bot.application_command(:dire) do |event|
+  if @active_beckon.nil?
+    event.respond(content: "There is no active beckon to cancel!", ephemeral: true)
+  else
+    event.respond(content: "[The beckon](#{@active_beckon.beckon_message.link}) has been canceled", flags: 1 << 2)
+    @active_beckon = nil
+  end
 end
 
 bot.reaction_add(emoji: COOLSPOT_ID) do |event|
@@ -113,31 +118,10 @@ TEAM_NAMES = %w[
   Bambinos
 ].freeze
 
-bot.application_command(:play) do |event|
-  if @active_beckon.nil? || @active_beckon.expired?
-    event.respond(
-      content: ":x: Uh oh. There is no active_beckon",
-      ephemeral: true
-    )
-    return
-  end
-  # event.defer
-  matches = event.options["best_of"]&.to_i || 1
-
-  maps = if event.options["include_reserve_maps"]
-           ACTIVE_DUTY_MAPS + RESERVE_MAPS
-         else
-           ACTIVE_DUTY_MAPS
-         end.sample(matches)
-
-  team_one_name, team_two_name = TEAM_NAMES.sample(2)
-  team_one = []
-  team_two = []
-  players = @active_beckon.spotters
-
-  excluded_players = (1..5).map { |i|
-    event.options["excluded_player_#{i}"] }.filter { |excluded_player| !excluded_player.nil? }
-
+def validate_players(players, event)
+  excluded_players = (1..5).map do |i|
+    event.options["excluded_player_#{i}"]
+  end.filter { |excluded_player| !excluded_player.nil? }
 
   players = players.filter { |player| !excluded_players.include?(player.id.to_s) }
 
@@ -146,46 +130,42 @@ bot.application_command(:play) do |event|
       content: ":x: Uh oh. There isn't enough spotters",
       ephemeral: true
     )
-    return
+    return nil
   end
 
   players_by_ranking = PLAYER_RANKINGS.filter do |player|
     players.map(&:id).include?(player)
   end
 
-  if players_by_ranking.count != 10
+  return nil unless players_by_ranking.count != 10
+
+  event.respond(
+    content: ":x: Uh oh. You might have too many players or have included players which have not been ranked yet. Try again!",
+    ephemeral: true
+  )
+  players
+end
+
+def validate_active_beckon(event)
+  if @active_beckon.nil? || @active_beckon.expired?
     event.respond(
-      content: ":x: Uh oh. You might have too many players or have included players which have not been ranked yet. Try again!",
+      content: ":x: Uh oh. There is no active_beckon",
       ephemeral: true
     )
-    return
+    return false
   end
+  true
+end
 
-  team_one_captain, team_two_captain = players_by_ranking.shift(2)
-  team_one << team_one_captain
-  team_two << team_two_captain
+bot.application_command(:play) do |event|
+  return unless validate_active_beckon(event)
 
-  first_pick_choice, first_side_choice = %i[team_one team_two].shuffle
+  num_matches = event.options["best_of"]&.to_i || 1
+  include_reserve_maps = event.options["include_reserve_maps"]
+  players = validate_players(@active_beckon.spotters, event)
+  return if players.nil?
 
-  team = first_pick_choice
-
-  while players_by_ranking.count.positive?
-    shift_amount = if players_by_ranking.count == 8 || players_by_ranking.count == 1
-                     1
-                   else
-                     2
-                   end
-
-    players_to_add = players_by_ranking.shift(shift_amount)
-
-    if team == :team_one
-      team_one.push(*players_to_add)
-      team = :team_two
-    elsif team == :team_two
-      team_two.push(*players_to_add)
-      team = :team_one
-    end
-  end
+  game = new Game(players, num_matches, include_reserve_maps)
 
   event.respond(
     embeds: [
@@ -193,8 +173,8 @@ bot.application_command(:play) do |event|
         color: 13_632_027,
         fields: [
           {
-            name: "**#{team_one_name}**",
-            value: team_one.each_with_index.map do |player, index|
+            name: "**#{game.team_one.team_name}**",
+            value: game.team_one.players.each_with_index.map do |player, index|
                      index.zero? ? "<@#{player}> :crown:" : "<@#{player}>"
                    end.join("\n"),
             inline: true
@@ -202,14 +182,14 @@ bot.application_command(:play) do |event|
 
           {
             name: "Maps",
-            value: maps.each_with_index.map do |map, index|
+            value: game.maps.each_with_index.map do |map, index|
                      "**:#{(index + 1).humanize}: #{map}** - [*Sides chosen by #{index.odd? ? eval("#{first_side_choice}_name") : eval("#{first_pick_choice}_name")}*]"
                    end.join("\n"),
             inline: true
           },
           {
-            name: "**#{team_two_name}**",
-            value: team_two.each_with_index.map do |player, index|
+            name: "**#{game.team_two.team_name}**",
+            value: game.team_two.players.each_with_index.map do |player, index|
                      index.zero? ? "<@#{player}> :crown:" : "<@#{player}>"
                    end.join("\n"),
             inline: true
